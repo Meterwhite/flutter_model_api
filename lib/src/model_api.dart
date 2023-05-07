@@ -27,9 +27,14 @@ abstract class ModelAPI<T> {
     dynamic userinfo,
     throwError = false,
   }) async {
-    _apiState = ModelAPIState.ready;
-    onAPIStateChanged?.call(apiState, api);
+    if (_apiState != ModelAPIState.ready) {
+      _apiState = ModelAPIState.ready;
+      onAPIStateChanged?.call(apiState, api);
+    }
     if (permission(apiUserInfo = userinfo)) {
+      if (hasError) {
+        clearError();
+      }
       _apiState = ModelAPIState.loading;
       onAPIStateChanged?.call(apiState, api);
       await loading();
@@ -37,12 +42,15 @@ abstract class ModelAPI<T> {
         // 如果需要则抛出最新的一个异常
         throw outError!;
       }
+      if (apiState != ModelAPIState.complete) {
+        throw "Method 'complete' is not called";
+      }
     } else {
       _apiState = ModelAPIState.loadBlocked;
       onAPIStateChanged?.call(apiState, api);
     }
-    _apiState = ModelAPIState.complete;
-    onAPIStateChanged?.call(apiState, api);
+    // _apiState = ModelAPIState.complete;
+    // onAPIStateChanged?.call(apiState, api);
     return Future.value(api);
   }
 
@@ -75,6 +83,8 @@ abstract class ModelAPI<T> {
   @mustCallSuper
   @protected
   void complete() {
+    _apiState = ModelAPIState.complete;
+    onAPIStateChanged?.call(apiState, api);
     _userCompletion?.call(api);
   }
 
