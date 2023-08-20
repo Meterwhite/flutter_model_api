@@ -11,10 +11,14 @@ enum ModelAPIState {
   complete,
 }
 
-/// 模型API，面向对象的处理耗时任务
-/// 命名规则：
-/// 入参前缀in
-/// 返回参数前缀out
+/// Modeling of network requests,  which manages input parameters and output parameters, which follows the "In-Out" naming convention.
+///
+/// Naming rules:
+/// The prefix of the input parameter: in
+/// (inUsername, inPassword)
+///
+/// The prefix of the return value: out
+/// (outLoginUser)
 abstract class ModelAPI<T> {
   dynamic apiUserInfo;
 
@@ -22,7 +26,14 @@ abstract class ModelAPI<T> {
 
   ModelAPIState get apiState => _apiState;
 
-  /// 启动API
+  /// Start request.
+  /// 
+  /// Two solutions are provided below:
+  /// api = await api.launch();
+  /// ===>
+  /// api.onComplete( (api) {
+  ///   ...
+  /// })
   Future<T> launch({
     dynamic userinfo,
     throwError = false,
@@ -39,22 +50,20 @@ abstract class ModelAPI<T> {
       onAPIStateChanged?.call(apiState, api);
       await loading();
       if (throwError && hasError) {
-        // 如果需要则抛出最新的一个异常
+        // Throw latest one exception if needed
         throw outError!;
       }
       if (apiState != ModelAPIState.complete) {
-        throw "Method 'complete' is not called";
+        throw "Method 'complete()' should be called";
       }
     } else {
       _apiState = ModelAPIState.loadBlocked;
       onAPIStateChanged?.call(apiState, api);
     }
-    // _apiState = ModelAPIState.complete;
-    // onAPIStateChanged?.call(apiState, api);
     return Future.value(api);
   }
 
-  /// 任务完成后续的处理
+  /// After the task is completed, the follow-up processing
   @mustCallSuper
   ModelAPI<T> onComplete(ModelAPICompletion<T>? completion) {
     _userCompletion = completion;
@@ -67,13 +76,14 @@ abstract class ModelAPI<T> {
     return this;
   }
 
-  /// 在这里完成所有耗时任务；API完成时调用complete()，你可能会调用多次
-  /// 完成后调用requestDone()
-  /// 任何异常和错误的抛出都可以记录到outError，outError是一个List类型
+  /// Complete all time-consuming tasks here;
+  /// call complete() when the API is complete, and you may call it multiple times
+  /// Any exception and error thrown can be recorded to outError,
+  /// outError is a List type
   @protected
   dynamic loading();
 
-  /// 可以使用mixin覆写
+  /// Can be overridden using a mixin
   @protected
   bool permission(dynamic userInfo) {
     return true;
@@ -88,10 +98,10 @@ abstract class ModelAPI<T> {
     _userCompletion?.call(api);
   }
 
-  /// 可以使用mixin覆写
+  /// Can be overridden using a mixin
   T get api {
     if (this is T == false) {
-      throw Exception('检查你的类型定义，或者在子类重写该方法');
+      throw TypeError();
     }
     return this as T;
   }
@@ -106,7 +116,7 @@ abstract class ModelAPI<T> {
 
   dynamic get outError => outErrors.isNotEmpty ? outErrors.last : null;
 
-  /// null无效
+  /// Assigning null is invalid
   @protected
   set outError(dynamic error) {
     if (error != null) {

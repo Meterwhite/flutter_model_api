@@ -1,15 +1,11 @@
 name: flutter_model_api
-description: OOP for HTTP, network, async task
+description: Modeling of network requests,  which manages input parameters and output parameters, which follows the "In-Out" naming convention.
 version: 1.0.0
 homepage: https://github.com/hivedb/hive/tree/master/hive
 documentation: https://github.com/hivedb/hive/tree/master/hive
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
-
-dependencies:
-  flutter:
-    sdk: flutter
 
 dev_dependencies:
   flutter_test:
